@@ -59,12 +59,15 @@ jobs:
             libelf-dev libncurses5-dev libncursesw5-dev xsltproc zlib1g-dev \
             subversion swig time ccache
 
-      - name: Fix feeds configuration (关键修复：只保留核心源)
+      - name: Fix feeds configuration (终极修复)
         working-directory: openwrt
         run: |
-          # 清空原有feeds配置，只保留3个核心源
-          cat > feeds.conf.default << 'EOF'
-          src-git base https://mirror.ghproxy.com/https://github.com/immortalwrt/immortalwrt.git;openwrt-23.05
+          # 先清空所有feeds
+          rm -rf feeds/
+          rm -f feeds.conf feeds.conf.default
+          
+          # 只保留3个最核心的源，用国内镜像加速
+          cat > feeds.conf << 'EOF'
           src-git packages https://mirror.ghproxy.com/https://github.com/immortalwrt/packages.git;openwrt-23.05
           src-git luci https://mirror.ghproxy.com/https://github.com/immortalwrt/luci.git;openwrt-23.05
           EOF
