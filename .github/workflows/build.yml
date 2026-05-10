@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-      REPO_URL: immortalwrt/immortalwrt
+      REPO_URL: https://mirror.ghproxy.com/https://github.com/immortalwrt/immortalwrt.git
       REPO_BRANCH: openwrt-23.05
       CCACHE_DIR: ${{ github.workspace }}/ccache
       CCACHE_MAXSIZE: 20G
@@ -42,12 +42,9 @@ jobs:
           restore-keys: |
             ccache-onecloud-
 
-      - name: Checkout ImmortalWrt source
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.REPO_URL }}
-          ref: ${{ env.REPO_BRANCH }}
-          path: openwrt
+      - name: Checkout ImmortalWrt source (国内镜像加速)
+        run: |
+          git clone --depth=1 -b ${{ env.REPO_BRANCH }} ${{ env.REPO_URL }} openwrt
 
       - name: Install dependencies
         run: |
@@ -59,18 +56,14 @@ jobs:
             libelf-dev libncurses5-dev libncursesw5-dev xsltproc zlib1g-dev \
             subversion swig time ccache
 
-      - name: Fix feeds configuration (终极修复)
+      - name: Replace all GitHub URLs with mirror (全局镜像加速)
         working-directory: openwrt
         run: |
-          # 先清空所有feeds
-          rm -rf feeds/
-          rm -f feeds.conf feeds.conf.default
+          # 替换feeds里的所有GitHub地址
+          sed -i 's#https://github.com/#https://mirror.ghproxy.com/https://github.com/#g' feeds.conf.default
           
-          # 只保留3个最核心的源，用国内镜像加速
-          cat > feeds.conf << 'EOF'
-          src-git packages https://mirror.ghproxy.com/https://github.com/immortalwrt/packages.git;openwrt-23.05
-          src-git luci https://mirror.ghproxy.com/https://github.com/immortalwrt/luci.git;openwrt-23.05
-          EOF
+          # 替换git配置，全局使用镜像
+          git config --global url."https://mirror.ghproxy.com/https://github.com/".insteadOf "https://github.com/"
 
       - name: Update feeds
         working-directory: openwrt
